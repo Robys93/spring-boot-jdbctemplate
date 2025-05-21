@@ -1,3 +1,4 @@
+// TutorialServiceImpl.java
 package com.giuseppe.spring.jdbc.mysql.service;
 
 import com.giuseppe.spring.jdbc.mysql.model.Tutorial;
@@ -5,7 +6,6 @@ import com.giuseppe.spring.jdbc.mysql.repository.TutorialRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class TutorialServiceImpl implements TutorialService {
@@ -17,59 +17,56 @@ public class TutorialServiceImpl implements TutorialService {
     }
 
     @Override
-    public int save(Tutorial tutorial) {
-        return tutorialRepository.save(tutorial);
+    public List<Tutorial> findAll(String title, String orderBy, Integer limit) {
+        if (title != null) {
+            return tutorialRepository.findByTitleContaining(title);
+        }
+
+        List<Tutorial> tutorials = tutorialRepository.findAll();
+
+        if (limit != null && limit > 0 && limit < tutorials.size()) {
+            tutorials = tutorials.subList(0, limit);
+        }
+
+        return tutorials;
     }
 
     @Override
-    public int update(Tutorial tutorial) {
-        return tutorialRepository.update(tutorial);
-    }
-
-    @Override
-    public Tutorial findById(Long id) {
+    public Tutorial findById(long id) {
         return tutorialRepository.findById(id);
     }
 
     @Override
-    public int deleteById(Long id) {
-        return tutorialRepository.deleteById(id);
+    public Tutorial create(Tutorial tutorial) {
+        tutorialRepository.save(tutorial);
+        return tutorial;
     }
 
     @Override
-    public List<Tutorial> findAll(String orderBy, Integer limit) {
-        List<Tutorial> tutorials = tutorialRepository.findAll();
-        return sortAndLimit(tutorials, orderBy, limit);
-    }
-
-    @Override
-    public List<Tutorial> findByPublished(boolean published, String orderBy, Integer limit) {
-        List<Tutorial> tutorials = tutorialRepository.findByPublished(published);
-        return sortAndLimit(tutorials, orderBy, limit);
-    }
-
-    @Override
-    public List<Tutorial> findByTitleContaining(String title, String orderBy, Integer limit) {
-        List<Tutorial> tutorials = tutorialRepository.findByTitleContaining(title);
-        return sortAndLimit(tutorials, orderBy, limit);
-    }
-
-    @Override
-    public int deleteAll() {
-        return tutorialRepository.deleteAll();
-    }
-
-    private List<Tutorial> sortAndLimit(List<Tutorial> tutorials, String orderBy, Integer limit) {
-        if (orderBy != null && orderBy.equalsIgnoreCase("title")) {
-            tutorials = tutorials.stream()
-                    .sorted((t1, t2) -> t1.getTitle().compareToIgnoreCase(t2.getTitle()))
-                    .collect(Collectors.toList());
+    public Tutorial update(long id, Tutorial tutorial) {
+        Tutorial existingTutorial = findById(id);
+        if (existingTutorial != null) {
+            existingTutorial.setTitle(tutorial.getTitle());
+            existingTutorial.setDescription(tutorial.getDescription());
+            existingTutorial.setPublished(tutorial.isPublished());
+            tutorialRepository.update(existingTutorial);
+            return existingTutorial;
         }
-        if (limit != null && limit > 0) {
-            tutorials = tutorials.stream()
-                    .limit(limit)
-                    .collect(Collectors.toList());
-        }
-        return tutorials;
+        return null;
+    }
+
+    @Override
+    public void deleteById(long id) {
+        tutorialRepository.deleteById(id);
+    }
+
+    @Override
+    public void deleteAll() {
+        tutorialRepository.deleteAll();
+    }
+
+    @Override
+    public List<Tutorial> findByPublished(boolean published) {
+        return tutorialRepository.findByPublished(published);
     }
 }
